@@ -14,4 +14,4 @@ do_install:append() {
 	install -m 0644 ${WORKDIR}/swupdate.cfg ${D}${sysconfdir}/swupdate/
 }
 
-COMPATIBLE_MACHINE = "neu6b-fleet"
+COMPATIBLE_MACHINE = "neu6b-fleet|neu6b-up-fleet"
