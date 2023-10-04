@@ -1,0 +1,104 @@
+name: Neu6B Upstream swupdate with hawkbit Runner
+
+on:
+  push:
+    branches:
+      - kirkstone
+
+jobs:
+  build:
+    name: neu6b swupdate swupdate with hawkbit kirkstone
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Clone repos
+        run: |
+          cd ${{ runner.workspace }}
+          [ -d 'bitbake' ] && rm -rf bitbake && git clone git://git.openembedded.org/bitbake -b master
+          [ -d 'openembedded-core' ] && rm -rf openembedded-core && git clone git://git.openembedded.org/openembedded-core -b kirkstone
+          [ -d 'meta-openembedded' ] && rm -rf meta-openembedded && git clone git://git.openembedded.org/meta-openembedded -b kirkstone
+          [ -d 'meta-arm' ] && rm -rf meta-arm && git clone git://git.yoctoproject.org/meta-arm -b kirkstone
+          [ -d 'meta-swupdate' ] && rm -rf meta-swupdate && git clone git@github.com:sbabic/meta-swupdate.git -b kirkstone
+          [ -d 'meta-swupdate-boards' ] && rm -rf meta-swupdate && git clone git@github.com:sbabic/meta-swupdate-boards.git -b kirkstone
+          [ -d 'meta-openaia' ] && rm -rf meta-openaia && git clone git@github.com:edgeble/meta-openaia.git -b kirkstone
+          [ -d 'meta-update' ] && rm -rf meta-update && git clone git@github.com:edgeble/meta-update.git -b kirkstone
+          [ -d 'meta-fleet' ] && rm -rf meta-fleet && git clone git@github.com:edgeble/meta-fleet.git -b kirkstone
+
+      - name: Configure machine
+        run: |
+          cd ${{ runner.workspace }}
+          source openembedded-core/oe-init-build-env build
+          echo 'MACHINE ??= "neu6b-up-fleet"' >> conf/local.conf
+          echo 'INIT_MANAGER = "sysvinit"' >> conf/local.conf
+          echo 'DISTRO_FEATURES:append = " bluetooth wifi"' >> conf/local.conf
+
+      - name: Update bblayers.conf
+        run: |
+          cd ${{ runner.workspace }}
+          source openembedded-core/oe-init-build-env build
+          bitbake-layers add-layer ../openembedded-core/meta
+          bitbake-layers add-layer ../meta-arm/meta-arm-toolchain
+          bitbake-layers add-layer ../meta-arm/meta-arm
+          bitbake-layers add-layer ../meta-openaia
+          bitbake-layers add-layer ../meta-update
+          bitbake-layers add-layer ../meta-fleet
+          bitbake-layers add-layer ../meta-openembedded/meta-oe
+          bitbake-layers add-layer ../meta-openembedded/meta-python
+          bitbake-layers add-layer ../meta-openembedded/meta-networking
+          bitbake-layers add-layer ../meta-swupdate
+          bitbake-layers add-layer ../meta-swupdate-boards
+
+      - name: Use existing downloads
+        run: |
+          cd ${{ runner.workspace }}
+          source openembedded-core/oe-init-build-env build
+          [ -d 'downloads' ] && rm -rf downloads && git clone git@github.com:edgeble/downloads.git -b kirkstone
+
+      - name: bitbake core-image-minimal and update-image
+        run: |
+          cd ${{ runner.workspace }}
+          source openembedded-core/oe-init-build-env build
+          export LC_ALL="en_US.UTF-8"
+          bitbake core-image-full-cmdline
+          bitbake update-image
+
+      - name: Upload output artifacts
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: ${{ runner.workspace }}/build/tmp-glibc/deploy/images/neu6b-up-fleet/*wic*
+          draft: false
+
+      - name: Upload swupdate image artifacts
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: ${{ runner.workspace }}/build/tmp-glibc/deploy/images/neu6b-up-fleet/*swu*
+          draft: false
+
+      - name: SWU file Upload  to Hawkbit server
+        run: |
+          cd ${{ runner.workspace }}
+          source openembedded-core/oe-init-build-env build
+          cd build/tmp-glibc/deploy/images/neu6b-up-fleet/
+          
+          curl -i -X POST 'http://localhost:8080/rest/v1/softwaremodules' \
+            -u 'admin:admin' \
+            -H 'Content-Type: application/json' \
+            -d '[{
+            "vendor": "Edgeble",
+            "name": "Neu6b swu image",
+            "description": "Neu6b update image",
+            "type": "os",
+            "version": "1.0"
+            }]'
+        
+          curl -i -X POST 'http://localhost:8080/rest/v1/softwaremodules/1/artifacts' \
+            -u 'admin:admin' \
+            -H 'Content-Type: multipart/form-data' \
+            -F 'file=@update-image-neu6b-up-fleet.swu'  
