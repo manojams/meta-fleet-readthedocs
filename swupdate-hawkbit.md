@@ -1,188 +1,69 @@
-# meta-openaia
+## Steps to Configure Hawkbit
 
-![Build](https://github.com/edgeble/meta-openaia/actions/workflows/neu2a-v2-kirkstone.yml/badge.svg)
-[![Github All Releases](https://img.shields.io/github/downloads/atom/atom/total.svg?style=flat)](https://github.com/edgeble/meta-openaia/releases)
+Step 1 :-
 
-Yocto BSP layer for the Edgeble OpenAIA - https://www.openaia.io
-
-This project is based on upstream - https://git.yoctoproject.org/meta-rockchip
-
-Please see the corresponding sections below for details.
-
-## Table of Contents
-
-I. [Build Host](https://github.com/edgeble/meta-openaia#build-host)
-
-II. [Configure Yocto](https://github.com/edgeble/meta-openaia#configure-yoctooe)
-
-III. [Build Yocto](https://github.com/edgeble/meta-openaia#building-meta--bsp-layers)
-
-## Build Host
-To install the required packages on a Debian based distribution (Ubuntu etc) run
-
-```
-sudo apt install gawk wget git diffstat unzip texinfo gcc build-essential \
-chrpath socat cpio python3 python3-pip python3-pexpect xz-utils \
-debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa \
-libsdl1.2-dev pylint xterm python3-subunit mesa-common-dev zstd liblz4-tool
-```
-
-## Configure Yocto/OE
-
-In order to build an image with BSP support for a given release, you need to download the corresponding layers described in the "Dependencies" section. Be sure that everything is in the same directory.
-
-```shell
-~ $ mkdir yocto; cd yocto
-~/yocto $ git clone git://git.openembedded.org/bitbake -b master
-~/yocto $ git clone git://git.openembedded.org/openembedded-core -b kirkstone
-~/yocto $ git clone git://git.yoctoproject.org/meta-arm -b kirkstone
-~/yocto $ git clone git://git.openembedded.org/meta-openembedded -b kirkstone
-~/yocto $ git clone git@github.com:edgeble/meta-openaia.git -b kirkstone
-~/yocto $ git clone git@github.com:edgeble/meta-update.git -b kirkstone
-~/yocto $ git clone git@github.com:edgeble/meta-fleet.git -b kirkstone
-```
-
-And put the meta-openaia layer here too.
-
-Then you need to source the configuration script:
-
-```shell
-~/yocto $ source openembedded-core/oe-init-build-env
-```
-
-Having done that, you can build a image for a edgeble boards by adding the location of the meta-openaia layer to bblayers.conf, along with any other layers needed.
-
-For example:
-
-```makefile
-# conf/bblayers.conf
-BBLAYERS ?= " \
-  ${TOPDIR}/../openembedded-core/meta\
-  ${TOPDIR}/../meta-arm/meta-arm \
-  ${TOPDIR}/../meta-arm/meta-arm-toolchain \
-  ${TOPDIR}/../meta-openaia \
-  ${TOPDIR}/../meta-update \
-  ${TOPDIR}/../meta-fleet \
-  ${TOPDIR}/../meta-openembedded/meta-oe \
-  ${TOPDIR}/../meta-openembedded/meta-python \
-  ${TOPDIR}/../meta-openembedded/meta-networking \
-  ${TOPDIR}/../meta-swupdate \
-  ${TOPDIR}/../meta-swupdate-boards \
-  "
-```
-
-To enable a particular machine, you need to add a MACHINE line naming the BSP to the local.conf file:
-
-For v5.10 kernel with swupdate:-
-
-```makefile
-  MACHINE = "neu6b-fleet"
-```
-
-For upstream kernel with swupdate:-
-
-```makefile
-  MACHINE = "neu6b-up-fleet"
-```
-
-
-Enable systemd in your Yocto configuration by adding the following to your local.conf file
-
-```makefile
-INIT_MANAGER = "systemd"
-```
-
-Enable disto features needed to support the pacakges by adding the following to your local.conf file
-
-```makefile
-DISTRO_FEATURES:append = " bluetooth wifi"
-```
-
-To enable Wifi using wpa_supplicant
-
-Create the wpa_supplicant configuration file by running the following command on your desktop.
-This will prompt you for the passphrase for your WiFi.
-You may want to then edit the file to remove the clear-text passphrase:
-
-```shell
-wpa_passphrase 'YOUR_SSID' >  ../meta-openaia/recipes-connectivity/wpa-supplicant/files/wpa_supplicant-nl80211-wlan0.conf
-```
-
-All supported machines can be found in meta-openaia/conf/machine.
-
-## Building meta- BSP Layers
-
-You should then be able to build a image as such:
-
-```shell
-bitbake core-image-full-cmdline
-```
-
-To Build swupdate Image
-
-```shell
-bitbake update-image
-```
-
-At the end of a successful build, you should have an .wic image in /path/to/yocto/build/tmp-glibc/deploy/\<MACHINE\>/
-
-If you want to boot the image on microSD card the follow below steps.
-
-```shell
-cd tmp-glibc/deploy/images/\<MACHINE\>
-sudo bmaptool copy --bmap core-image-full-cmdline-neu2a-io.wic.bmap core-image-full-cmdline-neu2a-io.wic.xz /dev/sdX
-```
-
-## Configure and run swupdate using Hawkbit server
-
-# Steps to Configure Hawkbit
-
-Step 1 :  Open the terminal and run the command given below. This command will start a hawkbit server for you at the port 8080.
+- Open the terminal and run the command given below. This command will start a hawkbit server for you at the port 8080.
 
 ```
 sudo docker run -p 8080:8080 hawkbit/hawkbit-update-server:latest
 ```
 
-Step 2 : Now go your favorite browser. Run the following command in your browser. Your_ip:8080 (like 192.168.xxx.xxx:8080).
-         If you don’t know your IP, simply run “ifconfig” command in your terminal and it will show you network configurations
+Step 2 :-
+
+- Now go your favorite browser. Run the following command in your browser,
+  Your_ip:8080 (like 192.168.xxx.xxx:8080).
+- If you don’t know your IP, simply run “ifconfig” command in your terminal and it will show you network configurations
 
 ![1](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/a16d73e9-2161-4eb9-bea1-502bee8c6ea5)
 
 
-Step 3 : Now, you will see the below screen in your browser. Simply use admin as username and password. Now, you are officially 
-         inside the Hawkbit server. You can now configure Hawkbit to send updates to your remote embedded devices.
+Step 3 :-
+- Now, you will see the below screen in your browser. Simply use admin as username and password.
+
+- You are officially inside the Hawkbit server. You can now configure Hawkbit to send updates to your remote embedded devices.
 
 
 ![2](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/41b97f14-f97b-4ab8-86a5-3fd8eed847f4)
 
 
-Step 4 : First of all, you need to define authentication configuration for receiving updates from Hawkbit.
-         Go to System Config tab in the left pane of the server. It will show you 4 types of authentications
-         for target devices to receive updates.The most common authentications used are gateway authentication and target authentications.
+Step 4 :-
+
+- First of all, you need to define authentication configuration for receiving updates from Hawkbit.
+
+- Go to System Config tab in the left pane of the server. It will show you 4 types of authentications
+  for target devices to receive updates.The most common authentications used are gateway authentication
+  and target authentications.
+
 - Copy gateway token by  selecting
   'Allow a gateway to authenticate and manage multiple targets through a gateway security token'
   this token helps to connect the device to hawkbit server.
 
+![3](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/0b2730dd-9827-45f8-bced-39136ea305ca)
+
+- Enable 'Allow targets to authenticate directly with their target security token'
+
+- Select your desired 'Polling Configuration',to make board polling time to Hawkbit server.
+
+- Don’t forget to press save button at the bottom .
+
 command run from Board to connect the hawkbit server with help of swupdate command which
 uses gateway token :-
 
+```
 root@neu6b-v1-5: swupdate -H neu6b-v1:1.0  -f /etc/swupdate.cfg -l 5 -u '-t DEFAULT -u http://192.168.0.105:8080 -i neu6b-v1 -g 883726480bf128a0f8985344b021464c'
 
-- Enable 'Allow targets to authenticate directly with their target security token'
-- Select your desired 'Polling Configuration',to make board polling time to Hawkbit server.
-- Don’t forget to press save button at the bottom .
+```
 
-![3](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/0b2730dd-9827-45f8-bced-39136ea305ca)
-
-
-# Steps to Register the Board using SWUpdate to Hawkbit Server in Targets section in Deployment Management
+## Register Board to Hawkbit Server
 
 We can add the Board details to the Hawkbit Server in the Targets section in two ways :-
+
 1. Before Build
        (or)
 2. After  Boot
 
-# Before build :-
+1) Before build :-
+
 - Add the required configurations of swupdate in meta-openaia and the build the yocto setup  .
 - These helps to connect the board to hawkbit server and poll for the update after first boot itself.
 
@@ -201,7 +82,8 @@ Eg:- SWUPDATE_SURICATTA_ARGS="-i neu6b-v1-${DEVICE_ID} -g 44f7e0fc67919b3144f3f0
 - To SWUPDATE_ARGS , for -H field , add the board hardware configuration details and version ,as per sw-description file
   which is present in recipes-extended/images/update-image/neu6b-v1-5.10-swu/sw-description
 
-# After Boot :-
+
+2) After Boot :-
 
 Add the required configurations of swupdate after the boot , save the changes and reboot the board to update and connect
 
@@ -219,12 +101,13 @@ After following the above steps,Now boot the Board,we can see a target device wi
 
 ![4](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/716b88ae-d8a2-4fdf-8bbc-aafc0a71fbc9)
 
-# Upload the Swupdate Image (.swu) file in  the upload Section of  Hawkbit server 
+
+## Upload the Swupdate Image (.swu)
 
 When we push the latest change , meta-openaia layer , automatically yml builds the yocto setup and upload the latest
 update-image(.swu) file of board to Hawkbit server .
 
-Note :- Prior to push the latest change to meta-layer , we should run  hawkbit server as per  steps followed by 'Steps to Configure Hawkbit ' 
+Note :- Prior to push the latest change to meta-layer , we should run  hawkbit server as per  steps followed by 'Steps to Configure Hawkbit '
 and github runner setup in our local host , before pushing our latest change.
 
 To run Github runner setup with self hosted follow the below link:-
@@ -234,62 +117,62 @@ https://github.com/manojams/meta-openaia/blob/kirkstone/runner-self-host-setup-R
 After running the Github runner setup and hawkbit server , push the latest change to meta layer , yml file builds the yocto 
 setup in our host  and uploads swu file to Hawkbit server.
 
-Github runner build  
-
-![Screenshot from 2023-09-25 15-17-27](https://github.com/manojams/meta-openaia/assets/97679353/9a119dea-1558-4700-b5f2-8b63f4e7bdd0)
-
-
 After push latest commit on meta-openaia , we can see latest swu file in software module section of Hawkbit panel by yml file.
 
-![upload-swu-img](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/3b915e7d-dd54-4cd8-8b3a-361b90ca5548)
+![5](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/376ae491-bf2e-4058-b115-c5a5f006c965)
 
-#  Steps for Update campaign rollout
 
-# Distribution Management :-
+##  Update the Board
+
+* Distribution Management :-
 
 - Go to the Distributions Management tab from the left selector
 - Create a Distribution of type "OS with app(s)", named DISTRO of version 1.0
 - Drag and drop the software module on the right pane onto the DISTRO distribution on the left pane
 
 Create Distro :-
-![step-5](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/502489c3-92c0-411f-80f2-44fa663df0d2)
+
+![6](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/3afd2ff9-4c6f-439e-9088-eb43565ecece)
+
 
 Assigned swu file to Distro:-
-![step-6](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/85590e5b-cf5e-4e41-ab8a-1f722b60bb11)
 
-# Target Filters :-
+![7](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/d5bc502a-7e97-464d-a8c9-ebe06a1a0160)
+
+* Target Filters :-
 - Go to the Target Filters tab from the left selector
 - Create a new filter named "Default filter" and use a generic filter such as "name==*"
 
-![step-7](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/cfb32fa3-7287-4533-bd80-8a61392b08c8)
+![8](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/5c6ad04e-4032-4471-b0be-b8d23e267826)
 
-# Rollout :-
+* Rollout :-
 - Go to the Rollout tab from the left selector
 - Create a new rollout campaign named "Neu6b-v1". Select the  distribution set, the default filter and enter 1 in the "Number of groups" field.
   You should see stats of deployment appearing.
-  
-create new Rollout :  
 
-![step-8](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/f3451b7c-a621-4dcc-ba63-6ca7ad3a51f2)
+create new Rollout :
+
+![9](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/c94f9791-5d71-4961-b1a2-08ebdc231415)
 
 
 Rollout Management :-
 
-![step-9](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/d1ea8019-d17b-48e8-9457-2600a3ebbc16)
+![10](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/52fc49d2-031e-4566-ac1f-a768924bf98b)
 
-# Applying the update :-
+
+* Applying the update :-
 
 - Press the "Play" icon on the right side of your rollout campaign to activate the deployment.
 
 At this point, you can either wait for a while, so that SWUpdate polls for updates and finds the new deployment campaign or kill and restart SWUpdate.
 You should find detailed information on the installation process in the standard output of SWUpdate.
 
-![step-10](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/ee1e1566-73c0-45f9-80de-7a4fbd2a4053)
+![11](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/0f8d467b-b59e-4a55-a4b9-846f1b182518)
 
 
-# check update is running in Board :-
+* check update is running in Board :-
 
-# sample swupdate log of swupdate running in Board :-
+* sample swupdate log of swupdate running in Board :-
 
 ```shell
 * Mark bundle as not supporting multiuse
@@ -362,9 +245,10 @@ Warning: Bootlimit (3) exceeded. Using altbootcmd.
 Hit any key to stop autoboot:  0 
 ```
 
-# Pause and cancel swupdate in Hawkbit server :-
+* Pause and cancel swupdate in Hawkbit server :-
 
-![step-pause-update-11](https://github.com/manojams/hawkbit-upload-neu6b/assets/97679353/e3ee6753-f312-403d-8d8c-fd0658d8ef9c)
+![12](https://github.com/manojams/meta-fleet-readthedocs/assets/97679353/02982a2e-65db-4f49-9b98-60c7cbdf27dc)
+
 
 cancel the running action of swupdate in action history in Deployment section.
 
